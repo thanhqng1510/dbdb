@@ -1,4 +1,4 @@
-# Minimal hashicorp/raft example
+# Minimal distributed key-value store using Raft
 
 Example:
 
@@ -6,14 +6,14 @@ Terminal 1:
 
 ```bash
 $ go build
-$ ./raft-example --node-id node1 --raft-port 2222 --http-port 8222
+$ ./dbdb --node-id node1 --raft-port 2222 --http-port 8222
 ```
 
 Terminal 2:
 
 ```bash
 $ go build
-$ ./raft-example --node-id node2 --raft-port 2223 --http-port 8223
+$ ./dbdb --node-id node2 --raft-port 2223 --http-port 8223
 ```
 
 Terminal 3, tell 1 to have 2 follow it:
