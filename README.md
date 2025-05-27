@@ -12,22 +12,33 @@ This will compile the application and place the executable at `./bin/dbdb`.
 
 ## Running
 
-Terminal 1:
+After building, you can run `dbdb`. The following flags are **required**:
+* `--node-id <id>`: A unique identifier for this node (e.g., `node1`).
+* `--raft-port <port>`: The port for Raft internode communication (e.g., `2222`).
+* `--http-port <port>`: The port for the HTTP API (e.g., `8222`).
+
+Optional flags:
+*   `--bootstrap`: Use this flag for the *first* node when starting a new cluster. Do not use with `--join`.
+*   `--join <leader-http-address>`: The HTTP address of an existing leader node to join (e.g., `localhost:8222`). Do not use with `--bootstrap`.
+
+### Example: Starting a 2-node cluster
+
+Terminal 1: Start the first node (bootstrap)
 
 ```bash
-$ ./bin/dbdb --node-id node1 --raft-port 2222 --http-port 8222
+$ ./bin/dbdb --node-id node1 --raft-port 2222 --http-port 8222 --bootstrap
 ```
 
-Terminal 2:
+Terminal 2: Start the second node and join the first node
 
 ```bash
-$ ./bin/dbdb --node-id node2 --raft-port 2223 --http-port 8223
+$ ./bin/dbdb --node-id node2 --raft-port 2223 --http-port 8223 --join localhost:8222
 ```
 
 Terminal 3, tell 1 to have 2 follow it:
 
 ```bash
-$ curl 'localhost:8222/join?followerAddr=localhost:2223&followerId=node2'
+$ curl -X POST 'localhost:8222/join?followerAddr=localhost:2223&followerId=node2'
 ```
 
 Terminal 3, now add a key:
