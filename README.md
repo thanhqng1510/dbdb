@@ -1,19 +1,27 @@
 # Minimal distributed key-value store using Raft
 
-Example:
+## Building
+
+To build the `dbdb` application, ensure you have Go installed on your system. Then, navigate to the project's root directory and run:
+
+```bash
+$ make build
+```
+
+This will compile the application and place the executable at `./bin/dbdb`.
+
+## Running
 
 Terminal 1:
 
 ```bash
-$ go build
-$ ./dbdb --node-id node1 --raft-port 2222 --http-port 8222
+$ ./bin/dbdb --node-id node1 --raft-port 2222 --http-port 8222
 ```
 
 Terminal 2:
 
 ```bash
-$ go build
-$ ./dbdb --node-id node2 --raft-port 2223 --http-port 8223
+$ ./bin/dbdb --node-id node2 --raft-port 2223 --http-port 8223
 ```
 
 Terminal 3, tell 1 to have 2 follow it:
