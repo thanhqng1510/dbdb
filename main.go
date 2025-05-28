@@ -31,6 +31,8 @@ func main() {
 		storeCfg.NodeID, storeCfg.RaftAddr, storeCfg.HttpAddr, storeCfg.Bootstrap, cfg.JoinAddr)
 
 	// TODO: use joinAddr instead of join API
+	// TODO: delete key
+	// TODO: thread-safe
 
 	// Start the HTTP server. This is a blocking call.
 	if err := store.StartHttpServer(); err != nil {
