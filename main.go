@@ -33,6 +33,8 @@ func main() {
 	// TODO: use joinAddr instead of join API
 	// TODO: delete key
 	// TODO: thread-safe
+	// TODO: update README with Dockerfile and docker-compose
+	// TODO: in docker-compose, no need different ports for each node
 
 	// Start the HTTP server. This is a blocking call.
 	if err := store.StartHttpServer(); err != nil {
