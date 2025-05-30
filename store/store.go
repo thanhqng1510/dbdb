@@ -1,12 +1,9 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"path"
 	"strconv"
@@ -23,7 +20,6 @@ type Config struct {
 	NodeID    string
 	RaftDir   string
 	RaftAddr  string
-	HttpAddr  string
 	Bootstrap bool
 }
 
@@ -32,7 +28,6 @@ type Store struct {
 	nodeID   string
 	raftDir  string
 	raftAddr string
-	httpAddr string
 	raft     *raft.Raft
 	data     *sync.Map
 }
@@ -43,7 +38,6 @@ func NewStore(cfg Config) (*Store, error) {
 		nodeID:   cfg.NodeID,
 		raftDir:  cfg.RaftDir,
 		raftAddr: cfg.RaftAddr,
-		httpAddr: cfg.HttpAddr,
 		data:     &sync.Map{},
 	}
 
@@ -73,15 +67,15 @@ func NewStore(cfg Config) (*Store, error) {
 	var advertiseAddr *net.TCPAddr
 	hostname := os.Getenv("HOSTNAME")
 	if hostname != "" && os.Getenv("DOCKER_ENV") == "true" {
-    // In Docker, use service name from docker-compose
-    serviceName := strings.Split(hostname, "-")[0] // Extract service name from Docker hostname
-    advertiseAddr, err = net.ResolveTCPAddr("tcp", serviceName+":"+strconv.Itoa(tcpAddr.Port))
-    if err != nil {
-        return nil, fmt.Errorf("could not create advertise address: %w", err)
-    }
+		// In Docker, use service name from docker-compose
+		serviceName := strings.Split(hostname, "-")[0] // Extract service name from Docker hostname
+		advertiseAddr, err = net.ResolveTCPAddr("tcp", serviceName+":"+strconv.Itoa(tcpAddr.Port))
+		if err != nil {
+			return nil, fmt.Errorf("could not create advertise address: %w", err)
+		}
 	} else {
-			// Use the same address for binding and advertising
-			advertiseAddr = tcpAddr
+		// Use the same address for binding and advertising
+		advertiseAddr = tcpAddr
 	}
 
 	transport, err := raft.NewTCPTransport(s.raftAddr, advertiseAddr, 10, time.Second*10, os.Stderr)
@@ -116,102 +110,41 @@ func NewStore(cfg Config) (*Store, error) {
 	return s, nil
 }
 
-// StartHttpServer starts the HTTP server for the store.
-func (s *Store) StartHttpServer() error {
-	log.Printf("Starting HTTP server on %s", s.httpAddr)
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/set", s.setHandler)
-	mux.HandleFunc("/get", s.getHandler)
-	mux.HandleFunc("/join", s.joinHandler)
-	return http.ListenAndServe(s.httpAddr, mux)
-}
-
-func (s *Store) setHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost { // Added method check for robustness
-		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	defer r.Body.Close()
-
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("Could not read request body for set: %s", err)
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
-		return
-	}
-
-	future := s.raft.Apply(bodyBytes, 500*time.Millisecond)
+// Set applies a command to set a key-value pair via Raft.
+func (s *Store) Set(data []byte) error {
+  if s.raft.State() != raft.Leader {
+    return fmt.Errorf("not the leader")
+  }
+  
+	future := s.raft.Apply(data, 500*time.Millisecond)
 	if err := future.Error(); err != nil {
-		log.Printf("Could not apply set command via Raft: %s", err)
-		http.Error(w, "Failed to set value (Raft error)", http.StatusInternalServerError)
-		return
+		return fmt.Errorf("could not apply set command via Raft: %w", err)
 	}
 
 	if fsmResponse := future.Response(); fsmResponse != nil {
 		if fsmErr, ok := fsmResponse.(error); ok {
-			log.Printf("FSM error on set command: %s", fsmErr)
-			http.Error(w, fmt.Sprintf("Failed to set value (FSM error: %s)", fsmErr), http.StatusInternalServerError)
-			return
+			return fmt.Errorf("FSM error on set command: %w", fsmErr)
 		}
 	}
-	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
-func (s *Store) getHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet { // Added method check
-		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	key := r.URL.Query().Get("key")
-
+// Get retrieves a value by key from the store.
+func (s *Store) Get(key string) interface{} {
 	value, _ := s.data.Load(key)
-	var valStr string
-	if value == nil {
-		valStr = ""
-	} else {
-		valStr = value.(string) // Assuming all stored values are strings
-	}
-
-	rsp := struct { Data string `json:"data"` }{valStr}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(rsp); err != nil {
-		log.Printf("Could not encode get response: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
+	return value
 }
 
-func (s *Store) joinHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	followerId := r.URL.Query().Get("followerId")
-	followerAddr := r.URL.Query().Get("followerAddr")
-
-	if followerId == "" || followerAddr == "" {
-		http.Error(w, "Missing followerId or followerAddr query parameters", http.StatusBadRequest)
-		return
-	}
-
+// AddFollower adds a new node to the Raft cluster.
+func (s *Store) AddFollower(followerId, followerAddr string) error {
 	if s.raft.State() != raft.Leader {
-		log.Printf("Join request for %s denied: this node (%s) is not the leader (state: %s)", followerId, s.nodeID, s.raft.State())
-		
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(struct{ Error string `json:"error"` }{"Not the leader"})
-		return
+		return fmt.Errorf("not the leader")
 	}
 
 	log.Printf("Handling join request for node %s at %s", followerId, followerAddr)
 	if err := s.raft.AddVoter(raft.ServerID(followerId), raft.ServerAddress(followerAddr), 0, 0).Error(); err != nil {
 		log.Printf("Failed to add voter %s (%s): %s", followerId, followerAddr, err)
-		http.Error(w, fmt.Sprintf("Failed to add follower: %s", err), http.StatusBadRequest) // As per original
-		return
+		return err
 	}
-	log.Printf("Successfully added voter %s (%s) to the cluster", followerId, followerAddr)
-	w.WriteHeader(http.StatusOK)
+	return nil
 }
