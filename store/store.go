@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -68,11 +67,11 @@ func NewStore(cfg Config) (*Store, error) {
 	hostname := os.Getenv("HOSTNAME")
 	if hostname != "" && os.Getenv("DOCKER_ENV") == "true" {
 		// In Docker, use service name from docker-compose
-		serviceName := strings.Split(hostname, "-")[0] // Extract service name from Docker hostname
-		advertiseAddr, err = net.ResolveTCPAddr("tcp", serviceName+":"+strconv.Itoa(tcpAddr.Port))
+		advertiseAddr, err = net.ResolveTCPAddr("tcp", hostname+":"+strconv.Itoa(tcpAddr.Port))
 		if err != nil {
 			return nil, fmt.Errorf("could not create advertise address: %w", err)
 		}
+		log.Printf("Running in Docker, advertising as %s", advertiseAddr)
 	} else {
 		// Use the same address for binding and advertising
 		advertiseAddr = tcpAddr
