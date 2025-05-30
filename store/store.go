@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -67,7 +69,22 @@ func NewStore(cfg Config) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve raft address %s: %w", s.raftAddr, err)
 	}
-	transport, err := raft.NewTCPTransport(s.raftAddr, tcpAddr, 10, time.Second*10, os.Stderr)
+
+	var advertiseAddr *net.TCPAddr
+	hostname := os.Getenv("HOSTNAME")
+	if hostname != "" && os.Getenv("DOCKER_ENV") == "true" {
+    // In Docker, use service name from docker-compose
+    serviceName := strings.Split(hostname, "-")[0] // Extract service name from Docker hostname
+    advertiseAddr, err = net.ResolveTCPAddr("tcp", serviceName+":"+strconv.Itoa(tcpAddr.Port))
+    if err != nil {
+        return nil, fmt.Errorf("could not create advertise address: %w", err)
+    }
+	} else {
+			// Use the same address for binding and advertising
+			advertiseAddr = tcpAddr
+	}
+
+	transport, err := raft.NewTCPTransport(s.raftAddr, advertiseAddr, 10, time.Second*10, os.Stderr)
 	if err != nil {
 		return nil, fmt.Errorf("could not create tcp transport: %w", err)
 	}

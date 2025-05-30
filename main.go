@@ -17,7 +17,7 @@ func main() {
 	storeCfg := store.Config{
 		NodeID:    cfg.Id,
 		RaftDir:   raftDataDir,
-		RaftAddr:  "localhost:" + cfg.RaftPort, // Assuming localhost for Raft communication
+		RaftAddr:  "0.0.0.0:"+cfg.RaftPort,     // Listen on all interfaces
 		HttpAddr:  ":" + cfg.HttpPort,          // HTTP server listens on all interfaces
 		Bootstrap: cfg.Bootstrap,
 	}

@@ -1,0 +1,34 @@
+services:
+  node1:
+    build: .
+    ports:
+      - "8222:8222"
+      - "2222:2222"
+    volumes:
+      - dbdb-data-1:/app/data
+    command: --node-id node1 --raft-port 2222 --http-port 8222 --bootstrap
+    networks:
+      - dbdb-net
+    hostname: node1
+
+  node2:
+    build: .
+    ports:
+      - "8223:8223"
+      - "2223:2223"
+    volumes:
+      - dbdb-data-2:/app/data
+    command: --node-id node2 --raft-port 2223 --http-port 8223 --join node1:8222
+    networks:
+      - dbdb-net
+    hostname: node2
+    depends_on:
+      - node1
+
+networks:
+  dbdb-net:
+    driver: bridge
+
+volumes:
+  dbdb-data-1:
+  dbdb-data-2:
