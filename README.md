@@ -89,3 +89,4 @@ References:
 * https://github.com/Jille/raft-grpc-example
 * https://github.com/otoolep/hraftd
 * https://pkg.go.dev/github.com/hashicorp/raft
+* https://www.youtube.com/watch?v=8XbxQ1Epi5w

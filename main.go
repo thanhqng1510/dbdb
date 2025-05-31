@@ -43,6 +43,7 @@ func main() {
 	// TODO: thread-safe
 	// TODO: does this scale
 	// TODO: allow to set / delete on any nodes
+	// TODO: option to get data from all nodes or just the leader
 
 	httpServer := http.NewServer(":"+cfg.HttpPort, store)
 	if err := httpServer.Start(); err != nil {
