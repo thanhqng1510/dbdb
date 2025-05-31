@@ -42,7 +42,7 @@ func main() {
 
 	// TODO: thread-safe
 	// TODO: does this scale
-	// TODO: allow to set / delete on any nodes
+	// TODO: allow to set / delete on any nodes. What happens if the node is not bootstrapped?
 	// TODO: option to get data from all nodes or just the leader
 
 	httpServer := http.NewServer(":"+cfg.HttpPort, store)
