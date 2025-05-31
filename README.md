@@ -21,7 +21,19 @@ Optional flags:
 *   `--bootstrap`: Use this flag for the *first* node when starting a new cluster. Do not use with `--join`.
 *   `--join <leader-http-address>`: The HTTP address of an existing leader node to join (e.g., `localhost:8222`). Do not use with `--bootstrap`.
 
-### Example: Starting a 2-node cluster
+## Running a Multi-Node Cluster with Docker Compose
+
+A sample `docker-compose.yml` is provided. To start a 3-node cluster:
+
+```bash
+docker-compose up
+```
+
+This will start three nodes (`node1` as leader, `node2` and `node3` as follower)
+
+**Note:** When using Docker Compose, service names (e.g., `node1:8221`) can be used for inter-node communication.
+
+## Example: Manually starting a 2-node cluster
 
 Terminal 1: Start the first node (bootstrap)
 

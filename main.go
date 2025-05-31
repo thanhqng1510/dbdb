@@ -41,8 +41,6 @@ func main() {
 
 	// TODO: use joinAddr instead of join API
 	// TODO: thread-safe
-	// TODO: update README with Dockerfile and docker-compose
-	// TODO: in docker-compose, no need different ports for each node
 	// TODO: does this scale
 	// TODO: allow to set / delete on any nodes
 
