@@ -29,6 +29,7 @@ func main() {
 		RaftAddr:          "0.0.0.0:"+cfg.RaftPort,
 		RaftAdvertiseAddr: hostname + ":" + cfg.RaftPort,
 		Bootstrap:         cfg.Bootstrap,
+		JoinAddr:          cfg.JoinAddr,
 	}
 
 	store, err := store.NewStore(storeCfg)
@@ -37,9 +38,8 @@ func main() {
 	}
 	
 	log.Printf("Starting dbdb node %s. Raft: %s. Bootstrap: %t. Join: %s",
-		storeCfg.NodeID, storeCfg.RaftAddr, storeCfg.Bootstrap, cfg.JoinAddr)
+		storeCfg.NodeID, storeCfg.RaftAddr, storeCfg.Bootstrap, storeCfg.JoinAddr)
 
-	// TODO: use joinAddr instead of join API
 	// TODO: thread-safe
 	// TODO: does this scale
 	// TODO: allow to set / delete on any nodes

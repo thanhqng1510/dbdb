@@ -2,8 +2,10 @@ package store
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"path"
 	"sync"
@@ -20,13 +22,14 @@ type Config struct {
 	RaftAddr          string
 	RaftAdvertiseAddr string
 	Bootstrap         bool
+	JoinAddr          string
 }
 
 // Store manages the Raft consensus and the key-value data.
 type Store struct {
-	config   Config
-	raft     *raft.Raft
-	data     *sync.Map
+	config Config
+	raft   *raft.Raft
+	data   *sync.Map
 }
 
 // NewStore creates and initializes a new Store.
@@ -92,9 +95,44 @@ func NewStore(cfg Config) (*Store, error) {
 			}
 			if err := s.raft.BootstrapCluster(configuration).Error(); err != nil {
 				return nil, fmt.Errorf("could not bootstrap cluster: %w", err)
-			}	
+			}
+		}
+	} else if s.config.JoinAddr != "" {
+		leaderAddr, err := net.ResolveTCPAddr("tcp", s.config.JoinAddr)
+		if err != nil {
+			return nil, fmt.Errorf("could not resolve join address %s: %w", s.config.JoinAddr, err)
+		}
+
+		// Call join API on the leader
+		joinURL := fmt.Sprintf("http://%s/join?followerId=%s&followerAddr=%s",
+			leaderAddr.String(), s.config.NodeID, s.config.RaftAdvertiseAddr)
+
+		maxRetries := 30
+		for i := range maxRetries {
+			log.Printf("Attempting to join cluster via %s (attempt %d/%d)", joinURL, i+1, maxRetries)
+
+			resp, err := http.Post(joinURL, "application/json", nil)
+			if err != nil {
+				log.Printf("Failed to call join API on leader: %v", err)
+			} else {
+				defer resp.Body.Close()
+
+				if resp.StatusCode == 200 {
+					log.Printf("Successfully joined cluster via %s", joinURL)
+					break
+				}
+
+				body, _ := io.ReadAll(resp.Body)
+				log.Printf("Join API returned status %d: %s", resp.StatusCode, string(body))
+			}
+
+			time.Sleep(2 * time.Second)
+			if i == maxRetries-1 {
+				return nil, fmt.Errorf("failed to join cluster after %d attempts", maxRetries)
+			}
 		}
 	}
+
 	return s, nil
 }
 
@@ -104,7 +142,7 @@ func (s *Store) Apply(data []byte) error {
 		return fmt.Errorf("not the leader")
 	}
 
-	future := s.raft.Apply(data, 500*time.Millisecond)
+	future := s.raft.Apply(data, 5*time.Second)
 	if err := future.Error(); err != nil {
 		return fmt.Errorf("could not perform apply command via Raft: %w", err)
 	}

@@ -47,12 +47,6 @@ Terminal 2: Start the second node and join the first node
 $ ./bin/dbdb --node-id node2 --raft-port 2222 --http-port 8222 --join localhost:8221
 ```
 
-Terminal 3, tell 1 to have 2 follow it:
-
-```bash
-$ curl -X POST 'localhost:8221/join?followerAddr=localhost:2222&followerId=node2'
-```
-
 Terminal 3, now add a key:
 
 ```bash
