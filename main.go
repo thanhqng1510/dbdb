@@ -31,7 +31,6 @@ func main() {
 		storeCfg.NodeID, storeCfg.RaftAddr, storeCfg.Bootstrap, cfg.JoinAddr)
 
 	// TODO: use joinAddr instead of join API
-	// TODO: delete key
 	// TODO: thread-safe
 	// TODO: update README with Dockerfile and docker-compose
 	// TODO: in docker-compose, no need different ports for each node
