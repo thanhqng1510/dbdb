@@ -40,10 +40,25 @@ func main() {
 	log.Printf("Starting dbdb node %s. Raft: %s. Bootstrap: %t. Join: %s",
 		storeCfg.NodeID, storeCfg.RaftAddr, storeCfg.Bootstrap, storeCfg.JoinAddr)
 
-	// TODO: thread-safe
-	// TODO: does this scale
+	// TODO: unit tests and integration tests
+	// TODO: sharding support
+	// TODO: support multiple raft clusters
+	// TODO: automate cluster membership using service discovery
+	// TODO: authentication
+	// TODO: remove node from cluster
+	// TODO: backup and restore
+	// TODO: mulple keys in a single Raft request
+	// TODO: error if key not exists
+	// TODO: do not allow set empty key or value
 	// TODO: allow to set / delete on any nodes
 	// TODO: option to get data from all nodes or just the leader
+	// TODO: support read-index protocol
+	/*
+	Summary Table
+	Node Type		Can Serve Stale Data		When?
+	Follower		Yes											Always possible, worse with partition
+	Leader			Yes											Only if partitioned or lost leadership
+	*/
 
 	httpServer := http.NewServer(":"+cfg.HttpPort, store)
 	if err := httpServer.Start(); err != nil {

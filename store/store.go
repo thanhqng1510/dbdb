@@ -100,30 +100,30 @@ func NewStore(cfg Config) (*Store, error) {
 	} else if s.config.JoinAddr != "" {
 		leaderAddr, err := net.ResolveTCPAddr("tcp", s.config.JoinAddr)
 		if err != nil {
-			return nil, fmt.Errorf("could not resolve join address %s: %w", s.config.JoinAddr, err)
+			return nil, fmt.Errorf("could not resolve address %s to join: %w", s.config.JoinAddr, err)
 		}
 
-		// Call join API on the leader
-		joinURL := fmt.Sprintf("http://%s/join?followerId=%s&followerAddr=%s",
+		// Call add-node API on the leader
+		addNodeURL := fmt.Sprintf("http://%s/add-node?followerId=%s&followerAddr=%s",
 			leaderAddr.String(), s.config.NodeID, s.config.RaftAdvertiseAddr)
 
 		maxRetries := 30
 		for i := range maxRetries {
-			log.Printf("Attempting to join cluster via %s (attempt %d/%d)", joinURL, i+1, maxRetries)
+			log.Printf("Attempting to join cluster via %s (attempt %d/%d)", addNodeURL, i+1, maxRetries)
 
-			resp, err := http.Post(joinURL, "application/json", nil)
+			resp, err := http.Post(addNodeURL, "application/json", nil)
 			if err != nil {
-				log.Printf("Failed to call join API on leader: %v", err)
+				log.Printf("Failed to call add-node API on leader: %v", err)
 			} else {
 				defer resp.Body.Close()
 
 				if resp.StatusCode == 200 {
-					log.Printf("Successfully joined cluster via %s", joinURL)
+					log.Printf("Successfully joined cluster via %s", addNodeURL)
 					break
 				}
 
 				body, _ := io.ReadAll(resp.Body)
-				log.Printf("Join API returned status %d: %s", resp.StatusCode, string(body))
+				log.Printf("Add-node API returned status %d: %s", resp.StatusCode, string(body))
 			}
 
 			time.Sleep(2 * time.Second)
@@ -167,7 +167,7 @@ func (s *Store) AddFollower(followerId, followerAddr string) error {
 		return fmt.Errorf("not the leader")
 	}
 
-	log.Printf("Handling join request for node %s at %s", followerId, followerAddr)
+	log.Printf("Handling add follower request for node %s at %s", followerId, followerAddr)
 	if err := s.raft.AddVoter(raft.ServerID(followerId), raft.ServerAddress(followerAddr), 0, 0).Error(); err != nil {
 		log.Printf("Failed to add voter %s (%s): %s", followerId, followerAddr, err)
 		return err

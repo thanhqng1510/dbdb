@@ -31,7 +31,7 @@ func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/apply", s.applyHandler)
 	mux.HandleFunc("/get", s.getHandler)
-	mux.HandleFunc("/join", s.joinHandler)
+	mux.HandleFunc("/add-node", s.addNodeHandler)
 	return http.ListenAndServe(s.addr, mux)
 }
 
@@ -78,6 +78,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	rsp := struct {
 		Data string `json:"data"`
 	}{valStr}
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(rsp); err != nil {
 		log.Printf("Could not encode get response: %s", err)
@@ -85,7 +86,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) joinHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) addNodeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
@@ -104,6 +105,7 @@ func (s *Server) joinHandler(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
+		
 		json.NewEncoder(w).Encode(struct {
 			Error string `json:"error"`
 		}{err.Error()})
