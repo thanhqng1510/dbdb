@@ -93,17 +93,24 @@ func NewStore(cfg Config) (*Store, error) {
 	s.raft = r
 
 	if cfg.Bootstrap {
-		log.Printf("Bootstrapping cluster with node ID %s at %s", s.nodeID, transport.LocalAddr())
-		configuration := raft.Configuration{
-			Servers: []raft.Server{
-				{
-					ID:      raft.ServerID(s.nodeID),
-					Address: transport.LocalAddr(),
-				},
-			},
+		hasState, err := raft.HasExistingState(boltStore, boltStore, snapshots)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check for existing state: %v", err)
 		}
-		if err := s.raft.BootstrapCluster(configuration).Error(); err != nil {
-			return nil, fmt.Errorf("could not bootstrap cluster: %w", err)
+
+		if !hasState {
+			log.Printf("Bootstrapping cluster with node ID %s at %s", s.nodeID, transport.LocalAddr())
+			configuration := raft.Configuration{
+				Servers: []raft.Server{
+					{
+						ID:      raft.ServerID(s.nodeID),
+						Address: transport.LocalAddr(),
+					},
+				},
+			}
+			if err := s.raft.BootstrapCluster(configuration).Error(); err != nil {
+				return nil, fmt.Errorf("could not bootstrap cluster: %w", err)
+			}	
 		}
 	}
 	return s, nil

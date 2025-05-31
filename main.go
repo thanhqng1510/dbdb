@@ -37,7 +37,6 @@ func main() {
 	// TODO: in docker-compose, no need different ports for each node
 	// TODO: does this scale
 	// TODO: allow to set / delete on any nodes
-	// TODO: handle docker-compose up with IP
 
 	httpServer := http.NewServer(":"+cfg.HttpPort, store)
 	if err := httpServer.Start(); err != nil {
