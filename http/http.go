@@ -29,13 +29,13 @@ func (s *Server) Start() error {
 	log.Printf("Starting HTTP server on %s", s.addr)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/set", s.setHandler)
+	mux.HandleFunc("/apply", s.applyHandler)
 	mux.HandleFunc("/get", s.getHandler)
 	mux.HandleFunc("/join", s.joinHandler)
 	return http.ListenAndServe(s.addr, mux)
 }
 
-func (s *Server) setHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) applyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
@@ -45,14 +45,14 @@ func (s *Server) setHandler(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Could not read request body for set: %s", err)
+		log.Printf("Could not read request body for apply operation: %s", err)
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
 
-	if err := s.store.Set(bodyBytes); err != nil {
-		log.Printf("Error setting value: %s", err)
-		http.Error(w, fmt.Sprintf("Failed to set value: %s", err), http.StatusInternalServerError)
+	if err := s.store.Apply(bodyBytes); err != nil {
+		log.Printf("Error applying operation: %s", err)
+		http.Error(w, fmt.Sprintf("Failed to apply operation: %s", err), http.StatusInternalServerError)
 		return
 	}
 

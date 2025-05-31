@@ -44,7 +44,7 @@ $ curl -X POST 'localhost:8222/join?followerAddr=localhost:2223&followerId=node2
 Terminal 3, now add a key:
 
 ```bash
-$ curl -X POST 'localhost:8222/set' -d '{"key": "x", "value": "23"}' -H 'content-type: application/json'
+$ curl -X POST 'localhost:8222/apply' -d '{"op": "set", "key": "x", "value": "23"}' -H 'content-type: application/json'
 ```
 
 Terminal 3, now get the key from either server:
@@ -54,6 +54,21 @@ $ curl 'localhost:8222/get?key=x'
 {"data":"23"}
 $ curl 'localhost:8223/get?key=x'
 {"data":"23"}
+```
+
+Terminal 3, now delete key 'x'
+
+```bash
+$ curl -X POST 'localhost:8222/apply' -d '{"op": "del", "key": "x"}' -H 'content-type: application/json'
+```
+
+Terminal 3, now get the key from either server:
+
+```bash
+$ curl 'localhost:8222/get?key=x'
+{"data":""}
+$ curl 'localhost:8223/get?key=x'
+{"data":""}
 ```
 
 References:

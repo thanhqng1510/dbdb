@@ -116,20 +116,20 @@ func NewStore(cfg Config) (*Store, error) {
 	return s, nil
 }
 
-// Set applies a command to set a key-value pair via Raft.
-func (s *Store) Set(data []byte) error {
-  if s.raft.State() != raft.Leader {
-    return fmt.Errorf("not the leader")
-  }
-  
+// Apply applies a command to the key-value store via Raft.
+func (s *Store) Apply(data []byte) error {
+	if s.raft.State() != raft.Leader {
+		return fmt.Errorf("not the leader")
+	}
+
 	future := s.raft.Apply(data, 500*time.Millisecond)
 	if err := future.Error(); err != nil {
-		return fmt.Errorf("could not apply set command via Raft: %w", err)
+		return fmt.Errorf("could not perform apply command via Raft: %w", err)
 	}
 
 	if fsmResponse := future.Response(); fsmResponse != nil {
 		if fsmErr, ok := fsmResponse.(error); ok {
-			return fmt.Errorf("FSM error on set command: %w", fsmErr)
+			return fmt.Errorf("FSM error on apply command: %w", fsmErr)
 		}
 	}
 	return nil
