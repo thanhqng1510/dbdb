@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"strconv"
 	"sync"
 	"time"
 
@@ -16,17 +15,16 @@ import (
 
 // Config holds the configuration for a Store.
 type Config struct {
-	NodeID    string
-	RaftDir   string
-	RaftAddr  string
-	Bootstrap bool
+	NodeID            string
+	RaftDir           string
+	RaftAddr          string
+	RaftAdvertiseAddr string
+	Bootstrap         bool
 }
 
 // Store manages the Raft consensus and the key-value data.
 type Store struct {
-	nodeID   string
-	raftDir  string
-	raftAddr string
+	config   Config
 	raft     *raft.Raft
 	data     *sync.Map
 }
@@ -34,56 +32,40 @@ type Store struct {
 // NewStore creates and initializes a new Store.
 func NewStore(cfg Config) (*Store, error) {
 	s := &Store{
-		nodeID:   cfg.NodeID,
-		raftDir:  cfg.RaftDir,
-		raftAddr: cfg.RaftAddr,
-		data:     &sync.Map{},
+		config: cfg,
+		data:   &sync.Map{},
 	}
 
-	if err := os.MkdirAll(s.raftDir, 0700); err != nil {
-		return nil, fmt.Errorf("could not create raft directory %s: %w", s.raftDir, err)
+	if err := os.MkdirAll(s.config.RaftDir, 0700); err != nil {
+		return nil, fmt.Errorf("could not create raft directory %s: %w", s.config.RaftDir, err)
 	}
 
 	// BoltDB store for logs and stable store.
-	boltDBPath := path.Join(s.raftDir, "raft.db")
+	boltDBPath := path.Join(s.config.RaftDir, "raft.db")
 	boltStore, err := raftboltdb.NewBoltStore(boltDBPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not create bolt store at %s: %w", boltDBPath, err)
 	}
 
 	// Snapshot store.
-	snapshotPath := path.Join(s.raftDir, "snapshots")
+	snapshotPath := path.Join(s.config.RaftDir, "snapshots")
 	snapshots, err := raft.NewFileSnapshotStore(snapshotPath, 2, os.Stderr)
 	if err != nil {
 		return nil, fmt.Errorf("could not create snapshot store at %s: %w", snapshotPath, err)
 	}
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", s.raftAddr)
+	advertiseAddr, err := net.ResolveTCPAddr("tcp", s.config.RaftAdvertiseAddr)
 	if err != nil {
-		return nil, fmt.Errorf("could not resolve raft address %s: %w", s.raftAddr, err)
+		return nil, fmt.Errorf("could not resolve raft advertise address %s: %w", s.config.RaftAdvertiseAddr, err)
 	}
 
-	var advertiseAddr *net.TCPAddr
-	hostname := os.Getenv("HOSTNAME")
-	if hostname != "" && os.Getenv("DOCKER_ENV") == "true" {
-		// In Docker, use service name from docker-compose
-		advertiseAddr, err = net.ResolveTCPAddr("tcp", hostname+":"+strconv.Itoa(tcpAddr.Port))
-		if err != nil {
-			return nil, fmt.Errorf("could not create advertise address: %w", err)
-		}
-		log.Printf("Running in Docker, advertising as %s", advertiseAddr)
-	} else {
-		// Use the same address for binding and advertising
-		advertiseAddr = tcpAddr
-	}
-
-	transport, err := raft.NewTCPTransport(s.raftAddr, advertiseAddr, 10, time.Second*10, os.Stderr)
+	transport, err := raft.NewTCPTransport(s.config.RaftAddr, advertiseAddr, 10, time.Second*10, os.Stderr)
 	if err != nil {
 		return nil, fmt.Errorf("could not create tcp transport: %w", err)
 	}
 
 	raftCfg := raft.DefaultConfig()
-	raftCfg.LocalID = raft.ServerID(s.nodeID)
+	raftCfg.LocalID = raft.ServerID(s.config.NodeID)
 
 	fsm := &kvFsm{data: s.data}
 	r, err := raft.NewRaft(raftCfg, fsm, boltStore, boltStore, snapshots, transport)
@@ -92,18 +74,18 @@ func NewStore(cfg Config) (*Store, error) {
 	}
 	s.raft = r
 
-	if cfg.Bootstrap {
+	if s.config.Bootstrap {
 		hasState, err := raft.HasExistingState(boltStore, boltStore, snapshots)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check for existing state: %v", err)
 		}
 
 		if !hasState {
-			log.Printf("Bootstrapping cluster with node ID %s at %s", s.nodeID, transport.LocalAddr())
+			log.Printf("Bootstrapping cluster with node ID %s at %s", s.config.NodeID, transport.LocalAddr())
 			configuration := raft.Configuration{
 				Servers: []raft.Server{
 					{
-						ID:      raft.ServerID(s.nodeID),
+						ID:      raft.ServerID(s.config.NodeID),
 						Address: transport.LocalAddr(),
 					},
 				},

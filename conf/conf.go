@@ -16,7 +16,7 @@ type Config struct {
 	// Port for HTTP API
 	HttpPort  string
 
-	// Address of an existing node within a cluster to join (e.g., "localhost:8222")
+	// Address of an existing node within a cluster to join (e.g., "localhost:8221")
 	JoinAddr  string
 
 	// If true, bootstrap a new cluster (should only be true for the first node),

@@ -26,48 +26,48 @@ Optional flags:
 Terminal 1: Start the first node (bootstrap)
 
 ```bash
-$ ./bin/dbdb --node-id node1 --raft-port 2222 --http-port 8222 --bootstrap
+$ ./bin/dbdb --node-id node1 --raft-port 2221 --http-port 8221 --bootstrap
 ```
 
 Terminal 2: Start the second node and join the first node
 
 ```bash
-$ ./bin/dbdb --node-id node2 --raft-port 2223 --http-port 8223 --join localhost:8222
+$ ./bin/dbdb --node-id node2 --raft-port 2222 --http-port 8222 --join localhost:8221
 ```
 
 Terminal 3, tell 1 to have 2 follow it:
 
 ```bash
-$ curl -X POST 'localhost:8222/join?followerAddr=localhost:2223&followerId=node2'
+$ curl -X POST 'localhost:8221/join?followerAddr=localhost:2222&followerId=node2'
 ```
 
 Terminal 3, now add a key:
 
 ```bash
-$ curl -X POST 'localhost:8222/apply' -d '{"op": "set", "key": "x", "value": "23"}' -H 'content-type: application/json'
+$ curl -X POST 'localhost:8221/apply' -d '{"op": "set", "key": "x", "value": "23"}' -H 'content-type: application/json'
 ```
 
 Terminal 3, now get the key from either server:
 
 ```bash
-$ curl 'localhost:8222/get?key=x'
+$ curl 'localhost:8221/get?key=x'
 {"data":"23"}
-$ curl 'localhost:8223/get?key=x'
+$ curl 'localhost:8222/get?key=x'
 {"data":"23"}
 ```
 
 Terminal 3, now delete key 'x'
 
 ```bash
-$ curl -X POST 'localhost:8222/apply' -d '{"op": "del", "key": "x"}' -H 'content-type: application/json'
+$ curl -X POST 'localhost:8221/apply' -d '{"op": "del", "key": "x"}' -H 'content-type: application/json'
 ```
 
 Terminal 3, now get the key from either server:
 
 ```bash
-$ curl 'localhost:8222/get?key=x'
+$ curl 'localhost:8221/get?key=x'
 {"data":""}
-$ curl 'localhost:8223/get?key=x'
+$ curl 'localhost:8222/get?key=x'
 {"data":""}
 ```
 

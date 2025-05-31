@@ -15,11 +15,20 @@ func main() {
 	cfg := conf.GetConfig(os.Args[1:])
 	raftDataDir := path.Join("data", fmt.Sprintf("%s-raft", cfg.Id))
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Fatalf("Failed to get hostname: %v", err)
+	}
+	if hostname == "" {
+		log.Fatal("Hostname is empty. Please set the hostname for this machine.")
+	}
+
 	storeCfg := store.Config{
-		NodeID:    cfg.Id,
-		RaftDir:   raftDataDir,
-		RaftAddr:  "0.0.0.0:"+cfg.RaftPort,     // Listen on all interfaces
-		Bootstrap: cfg.Bootstrap,
+		NodeID:            cfg.Id,
+		RaftDir:           raftDataDir,
+		RaftAddr:          "0.0.0.0:"+cfg.RaftPort,
+		RaftAdvertiseAddr: hostname + ":" + cfg.RaftPort,
+		Bootstrap:         cfg.Bootstrap,
 	}
 
 	store, err := store.NewStore(storeCfg)
