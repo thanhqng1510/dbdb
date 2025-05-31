@@ -1,27 +1,44 @@
 services:
   node1:
     build: .
+    container_name: dbdb_node1
     ports:
-      - "8222:8222"
-      - "2222:2222"
+      - "8221:8221"
+      - "2221:2221"
     volumes:
       - dbdb-data-1:/app/data
-    command: --node-id node1 --raft-port 2222 --http-port 8222 --bootstrap
+    command: --node-id node1 --raft-port 2221 --http-port 8221 --bootstrap
     networks:
       - dbdb-net
     hostname: node1
 
   node2:
     build: .
+    container_name: dbdb_node2
+    ports:
+      - "8222:8222"
+      - "2222:2222"
+    volumes:
+      - dbdb-data-2:/app/data
+    command: --node-id node2 --raft-port 2222 --http-port 8222 --join node1:8221
+    networks:
+      - dbdb-net
+    hostname: node2
+    depends_on:
+      - node1
+
+  node3:
+    build: .
+    container_name: dbdb_node3
     ports:
       - "8223:8223"
       - "2223:2223"
     volumes:
-      - dbdb-data-2:/app/data
-    command: --node-id node2 --raft-port 2223 --http-port 8223 --join node1:8222
+      - dbdb-data-3:/app/data
+    command: --node-id node3 --raft-port 2223 --http-port 8223 --join node1:8221
     networks:
       - dbdb-net
-    hostname: node2
+    hostname: node3
     depends_on:
       - node1
 
@@ -32,3 +49,4 @@ networks:
 volumes:
   dbdb-data-1:
   dbdb-data-2:
+  dbdb-data-3:
