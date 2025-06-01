@@ -32,6 +32,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/apply", s.applyHandler)
 	mux.HandleFunc("/get", s.getHandler)
 	mux.HandleFunc("/add-node", s.addNodeHandler)
+	mux.HandleFunc("/remove-node", s.removeNodeHandler)
 	return http.ListenAndServe(s.addr, mux)
 }
 
@@ -113,5 +114,34 @@ func (s *Server) addNodeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Successfully added voter %s (%s) to the cluster", followerId, followerAddr)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) removeNodeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	followerId := r.URL.Query().Get("followerId")
+
+	if followerId == "" {
+		http.Error(w, "Missing followerId query parameter", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.store.RemoveFollower(followerId); err != nil {
+		log.Printf("Failed to remove follower: %s", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		
+		json.NewEncoder(w).Encode(struct {
+			Error string `json:"error"`
+		}{err.Error()})
+		return
+	}
+
+	log.Printf("Successfully remove voter %s to the cluster", followerId)
 	w.WriteHeader(http.StatusOK)
 }

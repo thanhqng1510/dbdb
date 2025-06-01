@@ -174,3 +174,17 @@ func (s *Store) AddFollower(followerId, followerAddr string) error {
 	}
 	return nil
 }
+
+// RemoveFollower removes a node from the Raft cluster.
+func (s *Store) RemoveFollower(followerId string) error {
+	if s.raft.State() != raft.Leader {
+		return fmt.Errorf("not the leader")
+	}
+
+	log.Printf("Handling remove follower request for node %s", followerId)
+	if err := s.raft.RemoveServer(raft.ServerID(followerId), 0, 0).Error(); err != nil {
+		log.Printf("Failed to remove voter %s: %s", followerId, err)
+		return err
+	}
+	return nil
+}

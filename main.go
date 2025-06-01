@@ -45,7 +45,7 @@ func main() {
 	// TODO: support multiple raft clusters
 	// TODO: automate cluster membership using service discovery
 	// TODO: authentication
-	// TODO: remove node from cluster
+	// TODO: forward HTTP requests to the leader if this node is not the leader
 	// TODO: backup and restore
 	// TODO: mulple keys in a single Raft request
 	// TODO: error if key not exists
