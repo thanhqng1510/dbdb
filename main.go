@@ -47,6 +47,7 @@ func main() {
 	// TODO: authentication
 	// TODO: forward HTTP requests to the leader if this node is not the leader
 	// TODO: backup and restore
+	// TODO: issue leader remove itself
 	// TODO: mulple keys in a single Raft request
 	// TODO: error if key not exists
 	// TODO: do not allow set empty key or value
