@@ -45,13 +45,13 @@ func main() {
 	// TODO: support multiple raft clusters
 	// TODO: automate cluster membership using service discovery
 	// TODO: authentication
-	// TODO: forward HTTP requests to the leader if this node is not the leader
+
 	// TODO: backup and restore
 	// TODO: issue leader remove itself
-	// TODO: mulple keys in a single Raft request
+	// TODO: multiple keys in a single Raft request
 	// TODO: error if key not exists
-	// TODO: do not allow set empty key or value
-	// TODO: allow to set / delete on any nodes
+	// TODO: do not allow set empty key
+	// TODO: allow to send request to any nodes
 	// TODO: option to get data from all nodes or just the leader
 	// TODO: support read-index protocol
 	/*
