@@ -12,7 +12,11 @@ import (
 )
 
 func main() {
-	cfg := conf.GetConfig(os.Args[1:])
+	cfg, err := conf.GetConfig(os.Args[1:])
+	if err != nil {
+		log.Fatalf("Failed to get configuration: %v", err)
+	}
+	
 	raftDataDir := path.Join("data", fmt.Sprintf("%s-raft", cfg.Id))
 
 	hostname, err := os.Hostname()

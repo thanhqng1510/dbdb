@@ -1,8 +1,8 @@
 package conf
 
 import (
+	"errors"
 	"flag"
-	"os"
 )
 
 // Config holds the node configuration.
@@ -25,7 +25,7 @@ type Config struct {
 }
 
 // GetConfig parses command-line arguments and returns the configuration.
-func GetConfig(args []string) Config {
+func GetConfig(args []string) (Config, error) {
 	var cfg Config
 	fs := flag.NewFlagSet("dbdb", flag.ExitOnError)
 	fs.StringVar(&cfg.Id, "node-id", "", "Node ID (required)")
@@ -38,25 +38,22 @@ func GetConfig(args []string) Config {
 
 	if cfg.Bootstrap && cfg.JoinAddr != "" {
 		fs.Usage() // Print usage information
-		os.Stderr.WriteString("Error: --bootstrap cannot be used with --join\n")
-		os.Exit(1)
+		return Config{}, errors.New("error: --bootstrap cannot be used with --join")
 	}
 
 	// Check for mandatory fields
 	if cfg.Id == "" {
 		fs.Usage()
-		os.Stderr.WriteString("Error: --node-id is required\n")
-		os.Exit(1)
+		return Config{}, errors.New("error: --node-id is required")
 	}
 	if cfg.RaftPort == "" {
 		fs.Usage()
-		os.Stderr.WriteString("Error: --raft-port is required\n")
-		os.Exit(1)
+		return Config{}, errors.New("error: --raft-port is required")
 	}
 	if cfg.HttpPort == "" {
-		flag.Usage() // Print usage information
-		os.Stderr.WriteString("Error: --http-port is required\n")
-		os.Exit(1)
+		flag.Usage()
+		return Config{}, errors.New("error: --http-port is required")
 	}
-	return cfg
+	
+	return cfg, nil
 }
