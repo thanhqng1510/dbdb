@@ -15,6 +15,15 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 )
 
+// IStore defines the interface for a key-value store that uses Raft for consensus.
+// This interface allows for mocking in tests and provides a clear contract for the store's functionality.
+type IStore interface {
+	Apply([]byte) error
+	Get(string) (interface{}, bool)
+	AddFollower(string, string) error
+	RemoveFollower(string) error
+}
+
 // Config holds the configuration for a Store.
 type Config struct {
 	NodeID            string
@@ -156,9 +165,8 @@ func (s *Store) Apply(data []byte) error {
 }
 
 // Get retrieves a value by key from the store.
-func (s *Store) Get(key string) interface{} {
-	value, _ := s.data.Load(key)
-	return value
+func (s *Store) Get(key string) (interface{}, bool) {
+	return s.data.Load(key)
 }
 
 // AddFollower adds a new node to the Raft cluster.

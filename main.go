@@ -53,7 +53,6 @@ func main() {
 	// TODO: backup and restore
 	// TODO: issue leader remove itself
 	// TODO: multiple keys in a single Raft request
-	// TODO: error if key not exists
 	// TODO: do not allow set empty key
 	// TODO: allow to send request to any nodes
 	// TODO: option to get data from all nodes or just the leader

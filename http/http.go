@@ -13,11 +13,11 @@ import (
 // Server represents an HTTP server to communicate with store.
 type Server struct {
 	addr  string
-	store *store.Store
+	store store.IStore
 }
 
 // NewServer creates a new HTTP server.
-func NewServer(addr string, store *store.Store) *Server {
+func NewServer(addr string, store store.IStore) *Server {
 	return &Server{
 		addr:  addr,
 		store: store,
@@ -67,7 +67,16 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	key := r.URL.Query().Get("key")
-	value := s.store.Get(key)
+	if key == "" {
+		http.Error(w, "Key parameter must not be empty", http.StatusBadRequest)
+		return
+	}
+
+	value, exist := s.store.Get(key)
+	if !exist {
+		http.Error(w, fmt.Sprintf("Key %s not found", key), http.StatusBadRequest)
+		return
+	}
 
 	var valStr string
 	if value == nil {
