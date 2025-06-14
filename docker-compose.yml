@@ -2,6 +2,7 @@ services:
   node1:
     build: .
     container_name: dbdb_node1
+    restart: unless-stopped
     ports:
       - "8221:8221"
       - "2221:2221"
@@ -15,6 +16,7 @@ services:
   node2:
     build: .
     container_name: dbdb_node2
+    restart: unless-stopped
     ports:
       - "8222:8222"
       - "2222:2222"
@@ -30,6 +32,7 @@ services:
   node3:
     build: .
     container_name: dbdb_node3
+    restart: unless-stopped
     ports:
       - "8223:8223"
       - "2223:2223"
